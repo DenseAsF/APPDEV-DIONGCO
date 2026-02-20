@@ -18,8 +18,8 @@ const HomeScreen = () => {
       />
 
       
-      <Text style={{ fontSize: 40 }}>cumscreen</Text>
-      <Text style={{ fontSize: 10 }}>home screen</Text>
+      <Text style={{ fontSize: 20 }}>Epstein the financier</Text>
+      <Text style={{ fontSize: 10 }}>he is very bad.</Text>
     </View>
   );
 };
