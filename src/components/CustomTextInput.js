@@ -8,6 +8,7 @@ const CustomTextInput = ({
   onChangeText,
   textStyle,
   containerStyle,
+  inputStyle,
   placeholderTextColor = 'rgba(0,0,0,0.3)',
 }) => {
   return (
@@ -18,7 +19,7 @@ const CustomTextInput = ({
         value={value}
         onChangeText={onChangeText}
         placeholderTextColor={placeholderTextColor}
-        style={[styles.input, textStyle]}
+        style={[styles.input, textStyle, inputStyle]}
       />
     </View>
   );
@@ -26,7 +27,7 @@ const CustomTextInput = ({
 
 const styles = StyleSheet.create({
   label: {
-    fontSize: 16,
+    fontSize: 12,
     color: '#000',
     marginBottom: 5,
   },
@@ -35,7 +36,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.2)',  // light grey border
     borderRadius: 10,                // rounded corners
     width: '100%',
-    fontSize: 16,
+    fontSize: 12,
     paddingVertical: 10,
     paddingHorizontal: 15,
     backgroundColor: '#fff',         // optional: white input background

@@ -1,16 +1,15 @@
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 
-const CustomButton = ({ containerStyle, textStyle, label, onPress }) => {
+const CustomButton = ({ containerStyle, textStyle, label, onPress, disabled }) => {
   return (
-    <View style={containerStyle}>
-      <TouchableOpacity style={{ margin: 10 }} onPress={onPress}>
-        <View style={{ padding: 10, borderRadius: 5 }}>
-          <Text style={[textStyle, { color: 'white', fontSize: 20 }]}>
-            {label}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    </View>
+    <TouchableOpacity
+      style={containerStyle}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={disabled ? 1 : 0.7}
+    >
+      <Text style={textStyle}>{label}</Text>
+    </TouchableOpacity>
   );
 };
 
