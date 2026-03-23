@@ -9,18 +9,23 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from "@react-navigation/native";
 import CustomButton from "../../components/CustomButton";
 import CustomTextInput from "../../components/CustomTextInput";
 import { ROUTES } from "../../utils";
-import { login } from "../../app/api/auth";
+import { loginRequest } from "../../app/actions/authActions";
+import { selectAuthLoading, selectAuthError, selectIsAuthenticated } from "../../app/selectors/authSelectors";
 
 const LoginScreen = () => {
   const [emailAdd, setEmailAdd] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
+  
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const loading = useSelector(selectAuthLoading);
+  const authError = useSelector(selectAuthError);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   const validateForm = () => {
     if (!emailAdd.trim()) {
@@ -36,29 +41,25 @@ const LoginScreen = () => {
     return true;
   };
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     if (!validateForm()) return;
 
-    setLoading(true);
-
-    try {
-      console.log("Attempting login with username:", emailAdd);
-      const result = await login(emailAdd, password);
-      console.log("Login result:", result);
-      
-      setTimeout(() => {
-        Alert.alert("Success", "Login successful!");
-        navigation.navigate(ROUTES.HOME);
-      }, 100);
-    } catch (error) {
-      console.log("Login error:", error);
-      setTimeout(() => {
-        Alert.alert("Login Failed", error.message || "Invalid email or password");
-      }, 100);
-    } finally {
-      setLoading(false);
-    }
+    dispatch(loginRequest({ username: emailAdd, password }));
   };
+
+  // Handle navigation after successful login
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigation.navigate(ROUTES.HOME);
+    }
+  }, [isAuthenticated, navigation]);
+
+  // Show error alerts
+  React.useEffect(() => {
+    if (authError) {
+      Alert.alert("Login Failed", authError);
+    }
+  }, [authError]);
 
   return (
     <ImageBackground
@@ -116,7 +117,9 @@ const LoginScreen = () => {
           </Text>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate(ROUTES.REGISTER)}
+            onPress={() => {
+              navigation.navigate(ROUTES.REGISTER);
+            }}
           >
             <Text style={styles.registerLink}> Register</Text>
           </TouchableOpacity>
@@ -212,14 +215,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     marginTop: 18,
+    fontSize: 12
   },
 
   registerText: {
     color: "#666",
+    fontSize: 12
   },
 
   registerLink: {
     color: "#F2B622",
     fontWeight: "600",
+    fontSize: 12
   },
 });

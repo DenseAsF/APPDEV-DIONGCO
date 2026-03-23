@@ -1,6 +1,6 @@
-// import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.254.119:8000/api';
+const BASE_URL = 'http://192.168.223.23:8000/api';
 
 function getApiErrorMessage(data, fallback) {
     if (!data) return fallback;
@@ -34,7 +34,7 @@ async function safeSetItem(key, value) {
         if (!AsyncStorage || typeof AsyncStorage.setItem !== 'function') return;
         await AsyncStorage.setItem(key, value);
     } catch (e) {
-        console.warn('AsyncStorage setItem failed:', e?.message || e);
+        
     }
 }
 
@@ -43,7 +43,7 @@ async function safeGetItem(key) {
         if (!AsyncStorage || typeof AsyncStorage.getItem !== 'function') return null;
         return await AsyncStorage.getItem(key);
     } catch (e) {
-        console.warn('AsyncStorage getItem failed:', e?.message || e);
+        
         return null;
     }
 }
@@ -53,7 +53,7 @@ async function safeRemoveItem(key) {
         if (!AsyncStorage || typeof AsyncStorage.removeItem !== 'function') return;
         await AsyncStorage.removeItem(key);
     } catch (e) {
-        console.warn('AsyncStorage removeItem failed:', e?.message || e);
+      
     }
 }
 

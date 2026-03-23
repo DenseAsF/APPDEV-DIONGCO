@@ -14,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import CustomButton from "../../components/CustomButton";
 import CustomTextInput from "../../components/CustomTextInput";
 import { ROUTES } from "../../utils";
-import { register } from "../../app/api/auth";
+import { login, register } from "../../app/api/auth";
 
 const RegisterScreen = () => {
   const [formData, setFormData] = useState({
@@ -31,6 +31,7 @@ const RegisterScreen = () => {
   const navigation = useNavigation();
 
   const handleInputChange = (field, value) => {
+    console.log('[RegisterScreen] input change', { field, valueLength: typeof value === 'string' ? value.length : null });
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -38,50 +39,61 @@ const RegisterScreen = () => {
   };
 
   const validateForm = () => {
+    console.log('[RegisterScreen] validateForm start');
     if (!formData.username.trim()) {
+      console.log('[RegisterScreen] validateForm fail: username required');
       Alert.alert("Error", "Username is required");
       return false;
     }
     if (!formData.name.trim()) {
+      console.log('[RegisterScreen] validateForm fail: name required');
       Alert.alert("Error", "Full name is required");
       return false;
     }
     if (!formData.email.trim()) {
+      console.log('[RegisterScreen] validateForm fail: email required');
       Alert.alert("Error", "Email is required");
       return false;
     }
     if (!formData.phone.trim()) {
+      console.log('[RegisterScreen] validateForm fail: phone required');
       Alert.alert("Error", "Phone number is required");
       return false;
     }
     if (!formData.age.trim()) {
+      console.log('[RegisterScreen] validateForm fail: age required');
       Alert.alert("Error", "Age is required");
       return false;
     }
     if (!formData.password.trim()) {
+      console.log('[RegisterScreen] validateForm fail: password required');
       Alert.alert("Error", "Password is required");
       return false;
     }
     if (formData.password !== formData.confirmPassword) {
+      console.log('[RegisterScreen] validateForm fail: password mismatch');
       Alert.alert("Error", "Passwords do not match");
       return false;
     }
+    console.log('[RegisterScreen] validateForm success');
     return true;
   };
 
   const handleRegister = async () => {
+    console.log('[RegisterScreen] Create Account button pressed');
     if (!validateForm()) return;
 
     setLoading(true);
     try {
-      console.log("Attempting register with:", {
+      console.log("[RegisterScreen] Attempting register with:", {
         username: formData.username,
         email: formData.email,
         name: formData.name,
         phone: formData.phone,
         age: formData.age,
       });
-      await register(
+      console.log('[RegisterScreen] calling register()');
+      const registerResult = await register(
         formData.username,
         formData.email,
         formData.password,
@@ -89,18 +101,24 @@ const RegisterScreen = () => {
         formData.phone,
         formData.age
       );
-      Alert.alert(
-        "Welcome to Hotel Diongco!",
-        "Your account has been created successfully. Please sign in to continue.",
-        [
-          {
-            text: "Sign In",
-            onPress: () => navigation.navigate(ROUTES.LOGIN)
-          }
-        ]
-      );
+      console.log('[RegisterScreen] register() success', {
+        keys: registerResult && typeof registerResult === 'object' ? Object.keys(registerResult) : null,
+      });
+
+      console.log('[RegisterScreen] calling login() after register');
+      const loginResult = await login(formData.username, formData.password);
+      console.log('[RegisterScreen] login() after register success', {
+        keys: loginResult && typeof loginResult === 'object' ? Object.keys(loginResult) : null,
+        hasToken: Boolean(loginResult?.token),
+      });
+
+      console.log('[RegisterScreen] navigating to HOME (reset stack)');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: ROUTES.HOME }],
+      });
     } catch (error) {
-      console.log("Registration error:", error);
+      console.log("[RegisterScreen] Registration error:", error);
       Alert.alert(
         "Registration Failed",
         error.message || "An error occurred during registration"
