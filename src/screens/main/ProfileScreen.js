@@ -15,7 +15,6 @@ const ProfileScreen = () => {
       <Image
         source={{
           uri: IMG.LOGO,
-          // uri: 'https://tse2.mm.bing.net/th/id/OIP.pZ-q9NpVVYqUywmjvYSzdgHaD4?rs=1&pid=ImgDetMain&o=7&rm=3',
         }}
         style={{ width: 200, height: 200 }}
       />

@@ -47,14 +47,12 @@ const LoginScreen = () => {
     dispatch(loginRequest({ username: emailAdd, password }));
   };
 
-  // Handle navigation after successful login
   React.useEffect(() => {
     if (isAuthenticated) {
       navigation.navigate(ROUTES.HOME);
     }
   }, [isAuthenticated, navigation]);
 
-  // Show error alerts
   React.useEffect(() => {
     if (authError) {
       Alert.alert("Login Failed", authError);
@@ -87,8 +85,8 @@ const LoginScreen = () => {
         <Text style={styles.cardTitle}>Sign In</Text>
 
         <CustomTextInput
-          label="Email"
-          placeholder="Enter your email"
+          label="Username"
+          placeholder="Enter your username"
           value={emailAdd}
           onChangeText={setEmailAdd}
           containerStyle={styles.inputContainer}
@@ -125,6 +123,8 @@ const LoginScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
+
+      
     </ImageBackground>
   );
 };
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
 
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(29, 53, 153, 0.5)",
+    backgroundColor: "rgba(20, 20, 50, 0.6)",
   },
 
   heroContainer: {
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "",
     letterSpacing: 1,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Helvetica Neue LT Std",
   },
 
   heroSubtitle: {
@@ -169,12 +169,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 5,
     marginBottom: 10,
-    fontFamily: "Helvetica",
+    fontFamily: "Helvetica Neue LT Std",
+    letterSpacing: 0.3,
   },
 
   card: {
     backgroundColor: "#FFFFFF",
-    marginHorizontal: 40,
+    marginHorizontal: 24,
     padding: 20,
     borderRadius: 14,
     shadowColor: "#000",
@@ -190,7 +191,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 0,
     color: "#1D3599",
-    fontFamily: "Helvetica",
+    fontFamily: "Helvetica Neue LT Std",
+    letterSpacing: 0.3,
   },
 
   inputContainer: {
@@ -209,6 +211,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     fontWeight: "600",
+    fontFamily: "Helvetica Neue LT Std",
+    letterSpacing: 0.3,
   },
 
   registerRow: {
@@ -220,12 +224,16 @@ const styles = StyleSheet.create({
 
   registerText: {
     color: "#666",
-    fontSize: 12
+    fontSize: 12,
+    fontFamily: "Helvetica Neue LT Std",
+    letterSpacing: 0.3,
   },
 
   registerLink: {
     color: "#F2B622",
     fontWeight: "600",
-    fontSize: 12
+    fontSize: 12,
+    fontFamily: "Helvetica Neue LT Std",
+    letterSpacing: 0.3,
   },
 });

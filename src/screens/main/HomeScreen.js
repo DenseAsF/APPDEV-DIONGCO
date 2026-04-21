@@ -14,13 +14,14 @@ import {
   TouchableWithoutFeedback,
   StatusBar,
   SafeAreaView,
+  BackHandler,
+  Alert,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { ROUTES } from '../../utils';
 import {
   toggleMenu,
-  setCurrentSlide,
   fetchRoomsRequest,
   fetchAmenitiesRequest,
   scrollToSection as scrollToSectionAction,
@@ -28,7 +29,6 @@ import {
 import { logoutRequest } from '../../app/actions/authActions';
 import {
   selectMenuVisible,
-  selectCurrentSlide,
   selectRooms,
   selectAmenities,
   selectSectionLayouts,
@@ -76,10 +76,9 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
   const dispatch = useDispatch();
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Redux state
   const menuVisible = useSelector(selectMenuVisible);
-  const currentSlide = useSelector(selectCurrentSlide);
   const rooms = useSelector(selectRooms);
   const amenities = useSelector(selectAmenities);
   const sectionLayouts = useSelector(selectSectionLayouts);
@@ -101,7 +100,6 @@ const HomeScreen = () => {
     dispatch(logoutRequest());
   };
 
-  // Handle navigation after logout
   React.useEffect(() => {
     if (!isAuthenticated && authLoading === false) {
       navigation.reset({
@@ -131,7 +129,6 @@ const HomeScreen = () => {
     { name: 'Restaurant', description: 'Enjoy world-class cuisine prepared by our top chefs.', image: getImageSource('hotelspa') },
     { name: 'Gym', description: 'Stay fit with modern equipment and spacious workout areas.', image: getImageSource('hotelspa') },
     { name: 'Pool', description: 'Take a refreshing swim in our outdoor infinity pool.', image: getImageSource('hotelspa') },
-    { name: 'Bar', description: 'Unwind with cocktails and music at our stylish lounge bar.', image: getImageSource('hotelspa') },
   ];
 
   const staticRooms = [
@@ -141,46 +138,66 @@ const HomeScreen = () => {
   ];
 
   useEffect(() => {
-    // Fetch initial data
     dispatch(fetchRoomsRequest());
     dispatch(fetchAmenitiesRequest());
 
-    // Auto slide carousel
     const timer = setInterval(() => {
       const slides = ['hotelpatterned', 'hotelroom', 'diningroom', 'hotelspa'];
-      const nextSlide = (currentSlide + 1) % slides.length;
-      dispatch(setCurrentSlide(nextSlide));
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [dispatch, currentSlide]);
+  }, [dispatch]);
+
+  useEffect(() => {
+    console.log('BackHandler setup, isAuthenticated:', isAuthenticated);
+    
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      console.log('Back button pressed, isAuthenticated:', isAuthenticated);
+      
+      if (isAuthenticated) {
+        Alert.alert(
+          'Logout',
+          'Do you want to logout?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Logout',
+              style: 'destructive',
+              onPress: () => {
+                console.log('Logout confirmed');
+                handleLogout();
+              },
+            },
+          ],
+          { cancelable: true }
+        );
+        return true;
+      }
+      return false;
+    });
+
+    return () => {
+      console.log('BackHandler cleanup');
+      backHandler.remove();
+    };
+  }, [isAuthenticated, handleLogout]);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={handleMenuToggle} 
-          style={styles.menuButton}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity onPress={handleMenuToggle} style={styles.menuButton} activeOpacity={0.7}>
           <HamburgerIcon />
         </TouchableOpacity>
-        <Image 
-          source={getImageSource('logo')} 
-          style={styles.headerLogoImage} 
-          resizeMode="contain"
-        />
-        <View style={{ width: 40 }} /> 
+        <Image source={getImageSource('logo')} style={styles.headerLogoImage} resizeMode="contain" />
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* Side Menu Modal */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={menuVisible}
-        onRequestClose={() => dispatch(toggleMenu())}
-      >
+      <Modal animationType="fade" transparent={true} visible={menuVisible} onRequestClose={() => dispatch(toggleMenu())}>
         <TouchableWithoutFeedback onPress={() => dispatch(toggleMenu())}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
@@ -188,48 +205,33 @@ const HomeScreen = () => {
                 <View style={styles.menuHeader}>
                   <Text style={styles.menuTitle}>HOTEL DIONGCO</Text>
                   <TouchableOpacity onPress={() => dispatch(toggleMenu())}>
-                    <Text style={styles.closeText}>✕</Text>
+                    <Text style={styles.closeText}>×</Text>
                   </TouchableOpacity>
                 </View>
 
                 <View style={styles.menuItems}>
-                  <TouchableOpacity 
-                    style={styles.menuItem} 
-                    onPress={() => {
-                      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-                      dispatch(toggleMenu());
-                    }}
-                  >
+                  <TouchableOpacity style={styles.menuItem} onPress={() => {
+                    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+                    dispatch(toggleMenu());
+                  }}>
                     <Text style={styles.menuItemText}>Home</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
-                    style={styles.menuItem}
-                    onPress={() => scrollToSection('rooms')}
-                  >
+                  <TouchableOpacity style={styles.menuItem} onPress={() => scrollToSection('rooms')}>
                     <Text style={styles.menuItemText}>Rooms</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
-                    style={styles.menuItem}
-                    onPress={() => scrollToSection('amenities')}
-                  >
+                  <TouchableOpacity style={styles.menuItem} onPress={() => scrollToSection('amenities')}>
                     <Text style={styles.menuItemText}>Amenities</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
-                    style={styles.menuItem}
-                    onPress={() => scrollToSection('about')}
-                  >
+                  <TouchableOpacity style={styles.menuItem} onPress={() => scrollToSection('about')}>
                     <Text style={styles.menuItemText}>About Us</Text>
                   </TouchableOpacity>
 
                   <View style={styles.menuDivider} />
 
-                  <TouchableOpacity 
-                    style={[styles.menuItem, styles.logoutMenuItem]} 
-                    onPress={handleLogout}
-                  >
+                  <TouchableOpacity style={[styles.menuItem, styles.logoutMenuItem]} onPress={handleLogout}>
                     <Text style={[styles.menuItemText, styles.logoutMenuItemText]}>Logout</Text>
                   </TouchableOpacity>
                 </View>
@@ -239,16 +241,9 @@ const HomeScreen = () => {
         </TouchableWithoutFeedback>
       </Modal>
 
-      <ScrollView 
-        ref={scrollViewRef}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero Section */}
+      <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
         <View style={styles.heroContainer}>
-          <ImageBackground
-            source={getImageSource(slides[currentSlide].image)}
-            style={styles.heroBackground}
-          >
+          <ImageBackground source={getImageSource(slides[currentSlide].image)} style={styles.heroBackground}>
             <View style={styles.heroOverlay}>
               <Text style={styles.heroTitle}>HOTEL DIONGCO</Text>
               <Text style={styles.heroSubtitle}>Experience Luxury & Warmth</Text>
@@ -259,29 +254,17 @@ const HomeScreen = () => {
           </ImageBackground>
         </View>
 
-        {/* About Section */}
         <View onLayout={onSectionLayout('about')} style={styles.aboutSection}>
           <View style={styles.aboutTextContainer}>
-            <Text style={styles.aboutTitle}>
-              Experience the perfect balance of luxury and warmth.
-            </Text>
-            <Text style={styles.aboutDescription}>
-              Experience the perfect balance of luxury and warmth at Hotel Diongco. From elegant accommodations to world-class amenities, 
-              every detail is designed for your comfort. Whether you're here for business, leisure, or a special occasion, 
-              enjoy exceptional service, refined hospitality, and unforgettable moments in the heart of Dumaguete City.
-            </Text>
+            <Text style={styles.aboutTitle}>Experience the perfect balance of luxury and warmth.</Text>
+            <Text style={styles.aboutDescription}>Experience the perfect balance of luxury and warmth at Hotel Diongco. From elegant accommodations to world-class amenities, every detail is designed for your comfort. Whether you're here for business, leisure, or a special occasion, enjoy exceptional service, refined hospitality, and unforgettable moments in the heart of Dumaguete City.</Text>
             <TouchableOpacity style={styles.learnMoreButton}>
               <Text style={styles.learnMoreText}>Learn More</Text>
             </TouchableOpacity>
           </View>
-          <Image 
-            source={getImageSource('hotel')} 
-            style={styles.aboutImage} 
-            resizeMode="cover"
-          />
+          <Image source={getImageSource('hotel')} style={styles.aboutImage} resizeMode="cover" />
         </View>
 
-        {/* Rooms Section */}
         <View onLayout={onSectionLayout('rooms')} style={styles.section}>
           {renderSectionHeader('Our Rooms')}
           {homeLoading.rooms ? (
@@ -319,7 +302,6 @@ const HomeScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Amenities Section */}
         <View onLayout={onSectionLayout('amenities')} style={[styles.section, { backgroundColor: '#F8F9FA' }]}>
           {renderSectionHeader('Amenities & Services')}
           {homeLoading.amenities ? (
@@ -357,28 +339,19 @@ const HomeScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Rewards Section */}
         <View style={styles.rewardsSection}>
           <View style={styles.rewardsTextContainer}>
             <Text style={styles.rewardsTitle}>Join Our Rewards Program</Text>
-            <Text style={styles.rewardsDescription}>
-              Earn points every time you book a room or enjoy our amenities.  
-              Accumulate points and redeem them for exclusive discounts and special offers.  
-              Your loyalty deserves to be rewarded!
-            </Text>
-            <Text style={styles.rewardBullet}>✔ Book & Earn Points</Text>
-            <Text style={styles.rewardBullet}>✔ Collect Rewards with Every Stay</Text>
-            <Text style={styles.rewardBullet}>✔ Redeem Discounts & Exclusive Perks</Text>
-            
+            <Text style={styles.rewardsDescription}>Earn points every time you book a room or enjoy our amenities. Accumulate points and redeem them for exclusive discounts and special offers. Your loyalty deserves to be rewarded!</Text>
+            <Text style={styles.rewardBullet}> Book & Earn Points</Text>
+            <Text style={styles.rewardBullet}> Collect Rewards with Every Stay</Text>
+            <Text style={styles.rewardBullet}> Redeem Discounts & Exclusive Perks</Text>
+
             <TouchableOpacity style={styles.rewardsButton}>
               <Text style={styles.rewardsButtonText}>Start Earning Rewards</Text>
             </TouchableOpacity>
           </View>
-          <Image 
-            source={getImageSource('hotelrewards')} 
-            style={styles.rewardsImage}
-            resizeMode="cover"
-          />
+          <Image source={getImageSource('hotelrewards')} style={styles.rewardsImage} resizeMode="cover" />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -391,14 +364,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
-    height: 60,
+    height: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   menuButton: {
     padding: 5,
@@ -438,7 +416,7 @@ const styles = StyleSheet.create({
   },
   menuTitle: {
     fontSize: 20,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Helvetica Neue LT Std',
     color: '#1D3599',
     letterSpacing: 1,
   },
@@ -457,7 +435,7 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 18,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Helvetica Neue LT Std',
     color: '#333333',
   },
   menuDivider: {
@@ -469,10 +447,10 @@ const styles = StyleSheet.create({
   },
   logoutMenuItemText: {
     color: '#D32F2F',
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Helvetica Neue LT Std',
   },
   heroContainer: {
-    height: 500,
+    height: 480,
     width: '100%',
   },
   heroBackground: {
@@ -481,83 +459,98 @@ const styles = StyleSheet.create({
   },
   heroOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 20, 77, 0.4)',
+    backgroundColor: 'rgba(0, 15, 60, 0.45)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 30,
   },
   heroTitle: {
-    fontSize: 48,
-    fontFamily: 'Helvetica-Bold', // Using Helvetica-Bold instead of Cinzel if not available
+    fontSize: 44,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '700',
     color: '#FFFFFF',
     textAlign: 'center',
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
   heroSubtitle: {
-    fontSize: 18,
-    fontFamily: 'Helvetica',
-    color: '#FFFFFF',
-    marginTop: 15,
+    fontSize: 16,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '300',
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 12,
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   heroButton: {
-    marginTop: 30,
+    marginTop: 28,
     backgroundColor: '#1D3599',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 8,
+    paddingHorizontal: 36,
+    paddingVertical: 14,
+    borderRadius: 10,
+    shadowColor: '#1D3599',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   heroButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: 'Helvetica-Bold',
+    fontSize: 15,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   aboutSection: {
     padding: 30,
     backgroundColor: '#FFFFFF',
   },
   aboutTextContainer: {
-    marginBottom: 30,
+    marginBottom: 24,
   },
   aboutTitle: {
-    fontSize: 28,
-    fontFamily: 'Helvetica-Bold',
-    color: '#000000',
+    fontSize: 26,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '700',
+    color: '#1A1A1A',
     lineHeight: 34,
   },
   aboutDescription: {
-    fontSize: 16,
-    fontFamily: 'Helvetica',
-    color: '#435591',
-    marginTop: 20,
+    fontSize: 15,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '300',
+    color: '#555555',
+    marginTop: 16,
     lineHeight: 24,
   },
   learnMoreButton: {
-    marginTop: 25,
+    marginTop: 20,
     backgroundColor: '#1D3599',
     alignSelf: 'flex-start',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingVertical: 10,
-    borderRadius: 6,
+    borderRadius: 8,
   },
   learnMoreText: {
     color: '#FFFFFF',
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '600',
+    fontSize: 14,
   },
   aboutImage: {
     width: '100%',
-    height: 250,
-    borderRadius: 12,
+    height: 220,
+    borderRadius: 16,
   },
   section: {
-    padding: 25,
-    paddingTop: 40,
+    padding: 28,
+    paddingTop: 44,
   },
   sectionTitle: {
-    fontSize: 28,
-    fontFamily: 'Helvetica-Bold',
-    color: '#000000',
-    marginBottom: 30,
+    fontSize: 26,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 24,
   },
   cardGrid: {
     flexDirection: 'row',
@@ -567,102 +560,122 @@ const styles = StyleSheet.create({
   roomCard: {
     width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 15,
-    marginBottom: 25,
+    borderRadius: 16,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
     overflow: 'hidden',
   },
   amenityCard: {
     width: '48%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 20,
+    borderRadius: 14,
+    marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 3,
     overflow: 'hidden',
   },
   cardImage: {
     width: '100%',
-    height: 180,
+    height: 170,
   },
   cardContent: {
-    padding: 15,
+    padding: 14,
   },
   cardName: {
-    fontSize: 18,
-    fontFamily: 'Helvetica-Bold',
-    color: '#000000',
+    fontSize: 16,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '600',
+    color: '#1A1A1A',
   },
   cardDescription: {
-    fontSize: 14,
-    fontFamily: 'Helvetica',
-    color: '#435591',
-    marginTop: 8,
-    lineHeight: 20,
+    fontSize: 13,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '300',
+    color: '#666666',
+    marginTop: 6,
+    lineHeight: 18,
   },
   viewAllButton: {
-    marginTop: 10,
+    marginTop: 16,
     backgroundColor: '#1D3599',
-    paddingVertical: 15,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
+    shadowColor: '#1D3599',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
   viewAllText: {
     color: '#FFFFFF',
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 16,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '600',
+    fontSize: 15,
+    letterSpacing: 0.3,
   },
   rewardsSection: {
     padding: 30,
-    paddingTop: 50,
-    backgroundColor: '#FFFFFF',
+    paddingTop: 44,
+    paddingBottom: 36,
+    backgroundColor: '#F8F9FA',
   },
   rewardsTextContainer: {
-    marginBottom: 30,
+    marginBottom: 24,
   },
   rewardsTitle: {
-    fontSize: 28,
-    fontFamily: 'Helvetica-Bold',
-    color: '#000000',
-    marginBottom: 20,
+    fontSize: 26,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 16,
   },
   rewardsDescription: {
-    fontSize: 16,
-    fontFamily: 'Helvetica',
-    color: '#435591',
+    fontSize: 15,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '300',
+    color: '#555555',
     lineHeight: 24,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   rewardBullet: {
-    fontSize: 15,
-    fontFamily: 'Helvetica',
-    color: '#435591',
+    fontSize: 14,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '400',
+    color: '#1D3599',
     marginBottom: 8,
   },
   rewardsButton: {
-    marginTop: 25,
+    marginTop: 20,
     backgroundColor: '#1D3599',
-    paddingVertical: 15,
-    paddingHorizontal: 25,
-    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 10,
     alignSelf: 'flex-start',
+    shadowColor: '#1D3599',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
   rewardsButtonText: {
     color: '#FFFFFF',
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 16,
+    fontFamily: 'Helvetica Neue LT Std',
+    fontWeight: '600',
+    fontSize: 15,
+    letterSpacing: 0.3,
   },
   rewardsImage: {
     width: '100%',
-    height: 250,
-    borderRadius: 12,
+    height: 220,
+    borderRadius: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -673,7 +686,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Helvetica Neue LT Std',
     color: '#1D3599',
   },
   errorContainer: {
@@ -684,7 +697,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Helvetica Neue LT Std',
     color: '#D32F2F',
     textAlign: 'center',
   },
@@ -697,14 +710,14 @@ const styles = StyleSheet.create({
   },
   ctaTitle: {
     fontSize: 26,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Helvetica Neue LT Std',
     color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 15,
   },
   ctaSubtitle: {
     fontSize: 16,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Helvetica Neue LT Std',
     color: '#FFFFFF',
     textAlign: 'center',
     lineHeight: 24,
@@ -720,7 +733,7 @@ const styles = StyleSheet.create({
   ctaButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Helvetica Neue LT Std',
   },
 });
 

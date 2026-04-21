@@ -266,7 +266,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 30,
     color: "#1D3599",
-    fontFamily: "Helvetica",
+    fontFamily: "Helvetica Neue LT Std",
+    letterSpacing: 0.3,
   },
 
   inputContainer: {
@@ -285,6 +286,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     fontWeight: "600",
+    fontFamily: "Helvetica Neue LT Std",
+    letterSpacing: 0.3,
   },
 
   registerRow: {
@@ -295,10 +298,14 @@ const styles = StyleSheet.create({
 
   registerText: {
     color: "#666",
+    fontFamily: "Helvetica Neue LT Std",
+    letterSpacing: 0.3,
   },
 
   registerLink: {
     color: "#F2B622",
     fontWeight: "600",
+    fontFamily: "Helvetica Neue LT Std",
+    letterSpacing: 0.3,
   },
 });

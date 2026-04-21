@@ -1,5 +1,4 @@
 export const TOGGLE_MENU = 'TOGGLE_MENU';
-export const SET_CURRENT_SLIDE = 'SET_CURRENT_SLIDE';
 export const FETCH_ROOMS_REQUEST = 'FETCH_ROOMS_REQUEST';
 export const FETCH_ROOMS_SUCCESS = 'FETCH_ROOMS_SUCCESS';
 export const FETCH_ROOMS_FAILURE = 'FETCH_ROOMS_FAILURE';
@@ -10,11 +9,6 @@ export const SCROLL_TO_SECTION = 'SCROLL_TO_SECTION';
 
 export const toggleMenu = () => ({
   type: TOGGLE_MENU,
-});
-
-export const setCurrentSlide = (slideIndex) => ({
-  type: SET_CURRENT_SLIDE,
-  payload: { slideIndex },
 });
 
 export const fetchRoomsRequest = () => ({

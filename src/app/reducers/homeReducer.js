@@ -1,6 +1,5 @@
 import { 
   TOGGLE_MENU, 
-  SET_CURRENT_SLIDE, 
   FETCH_ROOMS_REQUEST, 
   FETCH_ROOMS_SUCCESS, 
   FETCH_ROOMS_FAILURE,
@@ -12,7 +11,6 @@ import {
 
 const initialState = {
   menuVisible: false,
-  currentSlide: 0,
   rooms: [],
   amenities: [],
   sectionLayouts: {},
@@ -32,11 +30,6 @@ const homeReducer = (state = initialState, action) => {
       return {
         ...state,
         menuVisible: !state.menuVisible,
-      };
-    case SET_CURRENT_SLIDE:
-      return {
-        ...state,
-        currentSlide: action.payload.slideIndex,
       };
     case FETCH_ROOMS_REQUEST:
       return {

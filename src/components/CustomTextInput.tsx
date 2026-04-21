@@ -1,5 +1,16 @@
 import React from 'react';
-import { Text, View, TextInput, StyleSheet } from 'react-native';
+import { Text, View, TextInput, StyleSheet, ViewStyle, TextStyle, TextInputProps } from 'react-native';
+
+interface CustomTextInputProps extends Omit<TextInputProps, 'style'> {
+  placeholder?: string;
+  label?: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  textStyle?: TextStyle;
+  containerStyle?: ViewStyle;
+  inputStyle?: TextStyle;
+  placeholderTextColor?: string;
+}
 
 const CustomTextInput = ({
   placeholder,
@@ -10,7 +21,7 @@ const CustomTextInput = ({
   containerStyle,
   inputStyle,
   placeholderTextColor = 'rgba(0,0,0,0.3)',
-}) => {
+}: CustomTextInputProps) => {
   return (
     <View style={containerStyle}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -28,19 +39,23 @@ const CustomTextInput = ({
 const styles = StyleSheet.create({
   label: {
     fontSize: 12,
+    fontFamily: 'Helvetica Neue LT Std',
     color: '#000',
     marginBottom: 5,
+    letterSpacing: 0.3,
   },
   input: {
-    borderWidth: 1,                  // full outline
-    borderColor: 'rgba(0,0,0,0.2)',  // light grey border
-    borderRadius: 10,                // rounded corners
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 10,
     width: '100%',
     fontSize: 12,
+    fontFamily: 'Helvetica Neue LT Std',
     paddingVertical: 10,
     paddingHorizontal: 15,
-    backgroundColor: '#fff',         // optional: white input background
+    backgroundColor: '#fff',
     color: '#000',
+    letterSpacing: 0.3,
   },
 });
 
