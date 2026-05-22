@@ -7,7 +7,6 @@ import {
   ImageBackground,
   StatusBar,
   TouchableOpacity,
-  Image,
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -15,9 +14,20 @@ import CustomButton from "../../components/CustomButton";
 import CustomTextInput from "../../components/CustomTextInput";
 import { ROUTES } from "../../utils";
 import { login, register } from "../../app/api/auth";
+import { hashPassword } from "../../utils/crypto";
+
+interface FormData {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  name: string;
+  phone: string;
+  age: string;
+}
 
 const RegisterScreen = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     username: "",
     email: "",
     password: "",
@@ -30,15 +40,15 @@ const RegisterScreen = () => {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
-  const handleInputChange = (field, value) => {
-    console.log('[RegisterScreen] input change', { field, valueLength: typeof value === 'string' ? value.length : null });
+  const handleInputChange = (field: keyof FormData, value: string) => {
+    console.log('[RegisterScreen] input change', { field, valueLength: value.length });
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const validateForm = () => {
+  const validateForm = (): boolean => {
     console.log('[RegisterScreen] validateForm start');
     if (!formData.username.trim()) {
       console.log('[RegisterScreen] validateForm fail: username required');
@@ -85,6 +95,8 @@ const RegisterScreen = () => {
 
     setLoading(true);
     try {
+      const hashedPassword = hashPassword(formData.password);
+      
       console.log("[RegisterScreen] Attempting register with:", {
         username: formData.username,
         email: formData.email,
@@ -96,7 +108,7 @@ const RegisterScreen = () => {
       const registerResult = await register(
         formData.username,
         formData.email,
-        formData.password,
+        hashedPassword,
         formData.name,
         formData.phone,
         formData.age
@@ -106,18 +118,18 @@ const RegisterScreen = () => {
       });
 
       console.log('[RegisterScreen] calling login() after register');
-      const loginResult = await login(formData.username, formData.password);
+      const loginResult = await login(formData.username, hashedPassword);
       console.log('[RegisterScreen] login() after register success', {
         keys: loginResult && typeof loginResult === 'object' ? Object.keys(loginResult) : null,
         hasToken: Boolean(loginResult?.token),
       });
 
       console.log('[RegisterScreen] navigating to HOME (reset stack)');
-      navigation.reset({
+      (navigation as any).reset({
         index: 0,
         routes: [{ name: ROUTES.HOME }],
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log("[RegisterScreen] Registration error:", error);
       Alert.alert(
         "Registration Failed",
@@ -221,7 +233,7 @@ const RegisterScreen = () => {
               Already have an account?
             </Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate(ROUTES.LOGIN)}
+              onPress={() => (navigation as any).navigate(ROUTES.LOGIN)}
             >
               <Text style={styles.registerLink}> Sign In</Text>
             </TouchableOpacity>

@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoginCredentials, RegisterData, AuthResponse } from '../../types';
+import { hashPassword } from '../../utils/crypto';
 
-const BASE_URL = 'http://10.156.211.23:8000/api';
+const BASE_URL = 'http://192.168.1.65:8000/api';
 
 interface ApiErrorData {
   message?: string;
@@ -60,41 +61,52 @@ async function safeRemoveItem(key: string): Promise<void> {
     if (!AsyncStorage || typeof AsyncStorage.removeItem !== 'function') return;
     await AsyncStorage.removeItem(key);
   } catch (e) {
-    // Silently fail
+
   }
 }
 
 export async function login(username: string, password: string): Promise<AuthResponse> {
-  // Hardcoded credentials for testing without API
-  if (username === 'Admin123' && password === 'Admin123') {
-    const mockData: AuthResponse = {
-      token: 'mock-jwt-token-for-testing',
-      user: { username: 'Admin123' }
-    };
-    await safeSetItem('authToken', mockData.token);
-    return mockData;
-  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-  const response = await fetch(`${BASE_URL}/login`, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ username, password }),
-  });
+  try {
+    console.log('[auth.login] Attempting login to:', `${BASE_URL}/login`);
+    console.log('[auth.login] Credentials:', { username, passwordHash: password.substring(0, 10) + '...' });
+    
+    const response = await fetch(`${BASE_URL}/login`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+      signal: controller.signal,
+    });
 
-  const data = await safeJson(response);
+    console.log('[auth.login] Response status:', response.status);
+    const data = await safeJson(response);
+    console.log('[auth.login] Response data:', data);
 
-  if (!response.ok) {
-    throw new Error(getApiErrorMessage(data, 'Login failed'));
-  }
+    if (!response.ok) {
+      const errorMsg = getApiErrorMessage(data, `HTTP ${response.status}`);
+      console.error('[auth.login] Login error:', errorMsg);
+      throw new Error(errorMsg);
+    }
 
-  if (data && 'token' in data && typeof data.token === 'string') {
+    if (!data || !('token' in data) || typeof data.token !== 'string') {
+      console.error('[auth.login] Invalid response format:', data);
+      throw new Error('Invalid response: missing token');
+    }
+
+    console.log('[auth.login] Login successful, saving token');
     await safeSetItem('authToken', data.token);
+    return data as AuthResponse;
+  } catch (error: any) {
+    console.error('[auth.login] Login exception:', error.message || error);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return data as AuthResponse;
 }
 
 export async function register(
@@ -106,22 +118,35 @@ export async function register(
   age: string,
   accountNumber?: string
 ): Promise<AuthResponse> {
-  const response = await fetch(`${BASE_URL}/register`, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ username, email, password, name, phone, age, accountNumber }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-  const data = await safeJson(response);
+  try {
+    const response = await fetch(`${BASE_URL}/register`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, email, password, name, phone, age, accountNumber }),
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    throw new Error(getApiErrorMessage(data, 'Registration failed'));
+    const data = await safeJson(response);
+
+    if (!response.ok) {
+      throw new Error(getApiErrorMessage(data, 'Registration failed'));
+    }
+
+    if (!data || !('token' in data) || typeof data.token !== 'string') {
+      throw new Error('Invalid response: missing token');
+    }
+
+    await safeSetItem('authToken', data.token);
+    return data as AuthResponse;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return data as AuthResponse;
 }
 
 export async function getAuthToken(): Promise<string | null> {

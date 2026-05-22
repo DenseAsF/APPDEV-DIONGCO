@@ -8,8 +8,9 @@ import {
   FETCH_AMENITIES_FAILURE,
   SCROLL_TO_SECTION
 } from '../actions/homeActions';
+import { HomeState } from '../../types';
 
-const initialState = {
+const initialState: HomeState = {
   menuVisible: false,
   rooms: [],
   amenities: [],
@@ -24,7 +25,7 @@ const initialState = {
   },
 };
 
-const homeReducer = (state = initialState, action) => {
+const homeReducer = (state: HomeState = initialState, action: any): HomeState => {
   switch (action.type) {
     case TOGGLE_MENU:
       return {

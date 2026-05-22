@@ -16,6 +16,7 @@ import CustomTextInput from "../../components/CustomTextInput";
 import { ROUTES } from "../../utils";
 import { loginRequest } from "../../app/actions/authActions";
 import { selectAuthLoading, selectAuthError, selectIsAuthenticated } from "../../app/selectors/authSelectors";
+import { hashPassword } from "../../utils/crypto";
 
 const LoginScreen = () => {
   const [emailAdd, setEmailAdd] = useState("");
@@ -27,9 +28,9 @@ const LoginScreen = () => {
   const authError = useSelector(selectAuthError);
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  const validateForm = () => {
+  const validateForm = (): boolean => {
     if (!emailAdd.trim()) {
-      Alert.alert("Error", "Email is required");
+      Alert.alert("Error", "Username is required");
       return false;
     }
 
@@ -44,12 +45,13 @@ const LoginScreen = () => {
   const handleLogin = () => {
     if (!validateForm()) return;
 
-    dispatch(loginRequest({ username: emailAdd, password }));
+    const hashedPassword = hashPassword(password);
+    (dispatch as any)(loginRequest({ username: emailAdd, password: hashedPassword }));
   };
 
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigation.navigate(ROUTES.HOME);
+      navigation.navigate(ROUTES.HOME as never);
     }
   }, [isAuthenticated, navigation]);
 
@@ -72,7 +74,7 @@ const LoginScreen = () => {
       <View style={styles.heroContainer}>
         <Image
           source={require("../../../assets/images/HOTEL LOGO.png")}
-          style={styles.logo}
+          style={styles.logo as any}
           resizeMode="contain"
         />
         <Text style={styles.heroTitle}>HOTEL DIONGCO</Text>
@@ -116,7 +118,7 @@ const LoginScreen = () => {
 
           <TouchableOpacity
             onPress={() => {
-              navigation.navigate(ROUTES.REGISTER);
+              navigation.navigate(ROUTES.REGISTER as never);
             }}
           >
             <Text style={styles.registerLink}> Register</Text>
@@ -159,7 +161,6 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 25,
     color: "#FFFFFF",
-    fontWeight: "",
     letterSpacing: 1,
     fontFamily: "Helvetica Neue LT Std",
   },

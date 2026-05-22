@@ -21,6 +21,7 @@ const CustomTextInput = ({
   containerStyle,
   inputStyle,
   placeholderTextColor = 'rgba(0,0,0,0.3)',
+  ...rest
 }: CustomTextInputProps) => {
   return (
     <View style={containerStyle}>
@@ -31,6 +32,7 @@ const CustomTextInput = ({
         onChangeText={onChangeText}
         placeholderTextColor={placeholderTextColor}
         style={[styles.input, textStyle, inputStyle]}
+        {...rest}
       />
     </View>
   );

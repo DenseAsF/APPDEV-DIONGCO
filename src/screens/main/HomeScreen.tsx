@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
   Dimensions,
   ImageBackground,
   Modal,
-  Animated,
   ActivityIndicator,
   TouchableWithoutFeedback,
   StatusBar,
@@ -47,7 +46,7 @@ const HamburgerIcon = () => (
   </View>
 );
 
-const getImageSource = (imageName) => {
+const getImageSource = (imageName: string) => {
   switch (imageName) {
     case 'hotelpatterned':
       return require('../../../assets/images/hotelpatterned.png');
@@ -68,13 +67,13 @@ const getImageSource = (imageName) => {
   }
 };
 
-const renderSectionHeader = (title) => (
+const renderSectionHeader = (title: string) => (
   <Text style={styles.sectionTitle}>{title}</Text>
 );
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const scrollViewRef = useRef(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const dispatch = useDispatch();
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -87,34 +86,34 @@ const HomeScreen = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const authLoading = useSelector(selectAuthLoading);
 
-  const onSectionLayout = (name) => (event) => {
+  const onSectionLayout = (name: string) => (event: any) => {
     const { y } = event.nativeEvent.layout;
-    dispatch(scrollToSectionAction(name, y));
+    (dispatch as any)(scrollToSectionAction(name, y));
   };
 
   const handleMenuToggle = () => {
-    dispatch(toggleMenu());
+    (dispatch as any)(toggleMenu());
   };
 
-  const handleLogout = () => {
-    dispatch(logoutRequest());
-  };
+  const handleLogout = useCallback(() => {
+    (dispatch as any)(logoutRequest());
+  }, [dispatch]);
 
   React.useEffect(() => {
     if (!isAuthenticated && authLoading === false) {
-      navigation.reset({
+      (navigation as any).reset({
         index: 0,
         routes: [{ name: ROUTES.LOGIN }],
       });
     }
   }, [isAuthenticated, authLoading, navigation]);
 
-  const scrollToSection = (name) => {
+  const scrollToSection = (name: string) => {
     const y = sectionLayouts[name];
     if (y !== undefined && scrollViewRef.current) {
       scrollViewRef.current.scrollTo({ y, animated: true });
     }
-    dispatch(toggleMenu());
+    (dispatch as any)(toggleMenu());
   };
 
   const slides = [
@@ -138,8 +137,8 @@ const HomeScreen = () => {
   ];
 
   useEffect(() => {
-    dispatch(fetchRoomsRequest());
-    dispatch(fetchAmenitiesRequest());
+    (dispatch as any)(fetchRoomsRequest());
+    (dispatch as any)(fetchAmenitiesRequest());
 
     const timer = setInterval(() => {
       const slides = ['hotelpatterned', 'hotelroom', 'diningroom', 'hotelspa'];
@@ -197,14 +196,14 @@ const HomeScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <Modal animationType="fade" transparent={true} visible={menuVisible} onRequestClose={() => dispatch(toggleMenu())}>
-        <TouchableWithoutFeedback onPress={() => dispatch(toggleMenu())}>
+      <Modal animationType="fade" transparent={true} visible={menuVisible} onRequestClose={() => (dispatch as any)(toggleMenu())}>
+        <TouchableWithoutFeedback onPress={() => (dispatch as any)(toggleMenu())}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.menuContainer}>
                 <View style={styles.menuHeader}>
                   <Text style={styles.menuTitle}>HOTEL DIONGCO</Text>
-                  <TouchableOpacity onPress={() => dispatch(toggleMenu())}>
+                  <TouchableOpacity onPress={() => (dispatch as any)(toggleMenu())}>
                     <Text style={styles.closeText}>×</Text>
                   </TouchableOpacity>
                 </View>
@@ -212,7 +211,7 @@ const HomeScreen = () => {
                 <View style={styles.menuItems}>
                   <TouchableOpacity style={styles.menuItem} onPress={() => {
                     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-                    dispatch(toggleMenu());
+                    (dispatch as any)(toggleMenu());
                   }}>
                     <Text style={styles.menuItemText}>Home</Text>
                   </TouchableOpacity>
@@ -278,7 +277,7 @@ const HomeScreen = () => {
             </View>
           ) : (
             <View style={styles.cardGrid}>
-              {rooms.length > 0 ? rooms.map((room, index) => (
+              {rooms.length > 0 ? rooms.map((room: any, index: number) => (
                 <View key={index} style={styles.roomCard}>
                   <Image source={room.imageName ? getImageSource(room.imageName) : getImageSource('hotelroom')} style={styles.cardImage} />
                   <View style={styles.cardContent}>
@@ -315,7 +314,7 @@ const HomeScreen = () => {
             </View>
           ) : (
             <View style={styles.cardGrid}>
-              {amenities.length > 0 ? amenities.map((item, index) => (
+              {amenities.length > 0 ? amenities.map((item: any, index: number) => (
                 <View key={index} style={styles.amenityCard}>
                   <Image source={item.imageName ? getImageSource(item.imageName) : getImageSource('hotelspa')} style={styles.cardImage} />
                   <View style={styles.cardContent}>

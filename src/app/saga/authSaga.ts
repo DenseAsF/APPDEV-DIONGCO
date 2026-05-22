@@ -8,14 +8,26 @@ import {
   LOGOUT_SUCCESS,
   LOGOUT_FAILURE,
 } from '../actions/authActions';
+import { LoginRequestAction } from '../../types';
 
-function* loginSaga(action) {
+function* loginSaga(action: LoginRequestAction): Generator {
   try {
     const { username, password } = action.payload;
-    const response = yield call(login, username, password);
+    console.log('[authSaga] loginSaga starting for user:', username);
+    
+    const response: any = yield call(login, username, password);
+    console.log('[authSaga] login() response:', response ? Object.keys(response) : 'null');
+    
+    if (!response) {
+      throw new Error('Empty response from login');
+    }
+    
+    if (!response.token) {
+      throw new Error('No token in response');
+    }
     
     if (response.token) {
-      console.log('Successfully logged in. JWT Token:', response.token);
+      console.log('[authSaga] Successfully logged in. JWT Token:', response.token.substring(0, 20) + '...');
     }
     
     yield put({
@@ -25,7 +37,9 @@ function* loginSaga(action) {
         token: response.token,
       },
     });
-  } catch (error) {
+    console.log('[authSaga] loginSaga completed successfully');
+  } catch (error: any) {
+    console.error('[authSaga] loginSaga error:', error.message || error);
     yield put({
       type: LOGIN_FAILURE,
       payload: {
@@ -42,7 +56,7 @@ function* logoutSaga() {
     yield put({
       type: LOGOUT_SUCCESS,
     });
-  } catch (error) {
+  } catch (error: any) {
     yield put({
       type: LOGOUT_FAILURE,
       payload: {

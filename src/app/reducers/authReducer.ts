@@ -1,6 +1,7 @@
 import { LOGIN_REQUEST, LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT_REQUEST, LOGOUT_SUCCESS, LOGOUT_FAILURE } from '../actions/authActions';
+import { AuthState } from '../../types';
 
-const initialState = {
+const initialState: AuthState = {
   user: null,
   token: null,
   isAuthenticated: false,
@@ -8,7 +9,7 @@ const initialState = {
   error: null,
 };
 
-const authReducer = (state = initialState, action) => {
+const authReducer = (state: AuthState = initialState, action: any): AuthState => {
   switch (action.type) {
     case LOGIN_REQUEST:
       return {
