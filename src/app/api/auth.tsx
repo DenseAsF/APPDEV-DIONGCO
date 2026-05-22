@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoginCredentials, RegisterData, AuthResponse } from '../../types';
 import { hashPassword } from '../../utils/crypto';
 
-const BASE_URL = 'http://192.168.1.65:8000/api';
+const BASE_URL = 'http://192.168.118.186:8000/api';
 
 interface ApiErrorData {
   message?: string;
@@ -133,9 +133,13 @@ export async function register(
     });
 
     const data = await safeJson(response);
+    console.log('[auth.register] Response status:', response.status);
+    console.log('[auth.register] Response data:', data);
 
     if (!response.ok) {
-      throw new Error(getApiErrorMessage(data, 'Registration failed'));
+      const errorMsg = getApiErrorMessage(data, `HTTP ${response.status}`);
+      console.error('[auth.register] Register error:', errorMsg);
+      throw new Error(errorMsg);
     }
 
     if (!data || !('token' in data) || typeof data.token !== 'string') {

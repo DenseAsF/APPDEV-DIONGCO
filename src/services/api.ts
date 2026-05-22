@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE = 'http://192.168.1.65:8000';
+const API_BASE = 'http://192.168.118.186:8000';
 
 const api = async (endpoint: string, options: RequestInit = {}) => {
   const token = await AsyncStorage.getItem('jwt_token');

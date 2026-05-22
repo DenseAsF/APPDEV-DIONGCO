@@ -18,7 +18,10 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
-import { ROUTES } from '../../utils';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../types/navigation';
+
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 import {
   toggleMenu,
   fetchRoomsRequest,
@@ -34,7 +37,6 @@ import {
   selectHomeLoading,
   selectHomeError,
 } from '../../app/selectors/homeSelectors';
-import { selectIsAuthenticated, selectAuthLoading } from '../../app/selectors/authSelectors';
 
 const { width, height } = Dimensions.get('window');
 
@@ -72,7 +74,7 @@ const renderSectionHeader = (title: string) => (
 );
 
 const HomeScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<HomeScreenNavigationProp>();
   const scrollViewRef = useRef<ScrollView>(null);
   const dispatch = useDispatch();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -83,8 +85,6 @@ const HomeScreen = () => {
   const sectionLayouts = useSelector(selectSectionLayouts);
   const homeLoading = useSelector(selectHomeLoading);
   const homeError = useSelector(selectHomeError);
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  const authLoading = useSelector(selectAuthLoading);
 
   const onSectionLayout = (name: string) => (event: any) => {
     const { y } = event.nativeEvent.layout;
@@ -98,15 +98,6 @@ const HomeScreen = () => {
   const handleLogout = useCallback(() => {
     (dispatch as any)(logoutRequest());
   }, [dispatch]);
-
-  React.useEffect(() => {
-    if (!isAuthenticated && authLoading === false) {
-      (navigation as any).reset({
-        index: 0,
-        routes: [{ name: ROUTES.LOGIN }],
-      });
-    }
-  }, [isAuthenticated, authLoading, navigation]);
 
   const scrollToSection = (name: string) => {
     const y = sectionLayouts[name];
@@ -149,41 +140,20 @@ const HomeScreen = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    console.log('BackHandler setup, isAuthenticated:', isAuthenticated);
-    
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      console.log('Back button pressed, isAuthenticated:', isAuthenticated);
-      
-      if (isAuthenticated) {
-        Alert.alert(
-          'Logout',
-          'Do you want to logout?',
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-            {
-              text: 'Logout',
-              style: 'destructive',
-              onPress: () => {
-                console.log('Logout confirmed');
-                handleLogout();
-              },
-            },
-          ],
-          { cancelable: true }
-        );
+      // Close menu if open
+      if (menuVisible) {
+        (dispatch as any)(toggleMenu());
         return true;
       }
+      // Otherwise let default back behavior happen (go to previous screen)
       return false;
     });
 
     return () => {
-      console.log('BackHandler cleanup');
       backHandler.remove();
     };
-  }, [isAuthenticated, handleLogout]);
+  }, [menuVisible, dispatch]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -230,6 +200,28 @@ const HomeScreen = () => {
 
                   <View style={styles.menuDivider} />
 
+                  <TouchableOpacity 
+                    style={styles.menuItem} 
+                    onPress={() => {
+                      (dispatch as any)(toggleMenu());
+                      navigation.navigate('MyBookings');
+                    }}
+                  >
+                    <Text style={styles.menuItemText}>My Bookings</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.menuItem} 
+                    onPress={() => {
+                      (dispatch as any)(toggleMenu());
+                      navigation.navigate('Profile');
+                    }}
+                  >
+                    <Text style={styles.menuItemText}>My Profile</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.menuDivider} />
+
                   <TouchableOpacity style={[styles.menuItem, styles.logoutMenuItem]} onPress={handleLogout}>
                     <Text style={[styles.menuItemText, styles.logoutMenuItemText]}>Logout</Text>
                   </TouchableOpacity>
@@ -246,7 +238,10 @@ const HomeScreen = () => {
             <View style={styles.heroOverlay}>
               <Text style={styles.heroTitle}>HOTEL DIONGCO</Text>
               <Text style={styles.heroSubtitle}>Experience Luxury & Warmth</Text>
-              <TouchableOpacity style={styles.heroButton}>
+              <TouchableOpacity 
+                style={styles.heroButton}
+                onPress={() => navigation.navigate('Rooms')}
+              >
                 <Text style={styles.heroButtonText}>Book Now</Text>
               </TouchableOpacity>
             </View>
@@ -257,7 +252,10 @@ const HomeScreen = () => {
           <View style={styles.aboutTextContainer}>
             <Text style={styles.aboutTitle}>Experience the perfect balance of luxury and warmth.</Text>
             <Text style={styles.aboutDescription}>Experience the perfect balance of luxury and warmth at Hotel Diongco. From elegant accommodations to world-class amenities, every detail is designed for your comfort. Whether you're here for business, leisure, or a special occasion, enjoy exceptional service, refined hospitality, and unforgettable moments in the heart of Dumaguete City.</Text>
-            <TouchableOpacity style={styles.learnMoreButton}>
+            <TouchableOpacity 
+              style={styles.learnMoreButton}
+              onPress={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}
+            >
               <Text style={styles.learnMoreText}>Learn More</Text>
             </TouchableOpacity>
           </View>
@@ -296,7 +294,10 @@ const HomeScreen = () => {
               ))}
             </View>
           )}
-          <TouchableOpacity style={styles.viewAllButton}>
+          <TouchableOpacity 
+            style={styles.viewAllButton}
+            onPress={() => navigation.navigate('Rooms')}
+          >
             <Text style={styles.viewAllText}>View All Rooms</Text>
           </TouchableOpacity>
         </View>
@@ -333,8 +334,11 @@ const HomeScreen = () => {
               ))}
             </View>
           )}
-          <TouchableOpacity style={styles.viewAllButton}>
-            <Text style={styles.viewAllText}>Inquire About Services</Text>
+          <TouchableOpacity 
+            style={styles.viewAllButton}
+            onPress={() => navigation.navigate('MyBookings')}
+          >
+            <Text style={styles.viewAllText}>View My Bookings</Text>
           </TouchableOpacity>
         </View>
 
@@ -346,8 +350,11 @@ const HomeScreen = () => {
             <Text style={styles.rewardBullet}> Collect Rewards with Every Stay</Text>
             <Text style={styles.rewardBullet}> Redeem Discounts & Exclusive Perks</Text>
 
-            <TouchableOpacity style={styles.rewardsButton}>
-              <Text style={styles.rewardsButtonText}>Start Earning Rewards</Text>
+            <TouchableOpacity 
+              style={styles.rewardsButton}
+              onPress={() => navigation.navigate('Profile')}
+            >
+              <Text style={styles.rewardsButtonText}>View My Profile</Text>
             </TouchableOpacity>
           </View>
           <Image source={getImageSource('hotelrewards')} style={styles.rewardsImage} resizeMode="cover" />

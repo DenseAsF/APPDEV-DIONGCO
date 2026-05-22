@@ -16,7 +16,6 @@ import CustomTextInput from "../../components/CustomTextInput";
 import { ROUTES } from "../../utils";
 import { loginRequest } from "../../app/actions/authActions";
 import { selectAuthLoading, selectAuthError, selectIsAuthenticated } from "../../app/selectors/authSelectors";
-import { hashPassword } from "../../utils/crypto";
 
 const LoginScreen = () => {
   const [emailAdd, setEmailAdd] = useState("");
@@ -45,8 +44,7 @@ const LoginScreen = () => {
   const handleLogin = () => {
     if (!validateForm()) return;
 
-    const hashedPassword = hashPassword(password);
-    (dispatch as any)(loginRequest({ username: emailAdd, password: hashedPassword }));
+    (dispatch as any)(loginRequest({ username: emailAdd, password }));
   };
 
   React.useEffect(() => {

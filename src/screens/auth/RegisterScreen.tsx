@@ -14,7 +14,6 @@ import CustomButton from "../../components/CustomButton";
 import CustomTextInput from "../../components/CustomTextInput";
 import { ROUTES } from "../../utils";
 import { login, register } from "../../app/api/auth";
-import { hashPassword } from "../../utils/crypto";
 
 interface FormData {
   username: string;
@@ -95,8 +94,6 @@ const RegisterScreen = () => {
 
     setLoading(true);
     try {
-      const hashedPassword = hashPassword(formData.password);
-      
       console.log("[RegisterScreen] Attempting register with:", {
         username: formData.username,
         email: formData.email,
@@ -108,7 +105,7 @@ const RegisterScreen = () => {
       const registerResult = await register(
         formData.username,
         formData.email,
-        hashedPassword,
+        formData.password,
         formData.name,
         formData.phone,
         formData.age
@@ -118,7 +115,7 @@ const RegisterScreen = () => {
       });
 
       console.log('[RegisterScreen] calling login() after register');
-      const loginResult = await login(formData.username, hashedPassword);
+      const loginResult = await login(formData.username, formData.password);
       console.log('[RegisterScreen] login() after register success', {
         keys: loginResult && typeof loginResult === 'object' ? Object.keys(loginResult) : null,
         hasToken: Boolean(loginResult?.token),
