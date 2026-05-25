@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Alert,
   Text,
@@ -11,11 +11,13 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from "@react-navigation/native";
+import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import CustomButton from "../../components/CustomButton";
 import CustomTextInput from "../../components/CustomTextInput";
 import { ROUTES } from "../../utils";
-import { loginRequest } from "../../app/actions/authActions";
+import { loginRequest, googleSignInRequest } from "../../app/actions/authActions";
 import { selectAuthLoading, selectAuthError, selectIsAuthenticated } from "../../app/selectors/authSelectors";
+import { configureGoogleSignIn } from "../../config/googleSignIn";
 
 const LoginScreen = () => {
   const [emailAdd, setEmailAdd] = useState("");
@@ -45,6 +47,10 @@ const LoginScreen = () => {
     if (!validateForm()) return;
 
     (dispatch as any)(loginRequest({ username: emailAdd, password }));
+  };
+
+  const handleGoogleSignIn = () => {
+    (dispatch as any)(googleSignInRequest());
   };
 
   React.useEffect(() => {
@@ -107,6 +113,20 @@ const LoginScreen = () => {
           disabled={loading}
           containerStyle={styles.loginButton}
           textStyle={styles.buttonText}
+        />
+
+        <View style={styles.dividerContainer}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <GoogleSigninButton
+          style={styles.googleButton}
+          size={GoogleSigninButton.Size.Wide}
+          color={GoogleSigninButton.Color.Dark}
+          onPress={handleGoogleSignIn}
+          disabled={loading}
         />
 
         <View style={styles.registerRow}>
@@ -234,5 +254,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Helvetica Neue LT Std",
     letterSpacing: 0.3,
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 15,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E0E0E0",
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    color: "#999",
+    fontSize: 12,
+    fontFamily: "Helvetica Neue LT Std",
+  },
+  googleButton: {
+    width: "100%",
+    height: 48,
   },
 });

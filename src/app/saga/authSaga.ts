@@ -1,14 +1,18 @@
 import { takeLatest, put, call } from 'redux-saga/effects';
 import { login, logout as logoutApi } from '../api/auth';
+import { signInWithGoogle, signOutFromGoogle } from '../../services/googleAuth';
 import {
   LOGIN_REQUEST,
   LOGIN_SUCCESS,
   LOGIN_FAILURE,
+  GOOGLE_SIGN_IN_REQUEST,
+  GOOGLE_SIGN_IN_SUCCESS,
+  GOOGLE_SIGN_IN_FAILURE,
   LOGOUT_REQUEST,
   LOGOUT_SUCCESS,
   LOGOUT_FAILURE,
 } from '../actions/authActions';
-import { LoginRequestAction } from '../../types';
+import { LoginRequestAction, GoogleSignInRequestAction } from '../../types';
 
 function* loginSaga(action: LoginRequestAction): Generator {
   try {
@@ -49,10 +53,58 @@ function* loginSaga(action: LoginRequestAction): Generator {
   }
 }
 
+function* googleSignInSaga(action: GoogleSignInRequestAction): Generator {
+  try {
+    console.log('[authSaga] googleSignInSaga starting...');
+
+    const response: any = yield call(signInWithGoogle);
+    console.log('[authSaga] Google Sign-In response:', response ? Object.keys(response) : 'null');
+
+    if (!response) {
+      throw new Error('Empty response from Google Sign-In');
+    }
+
+    if (!response.user) {
+      throw new Error('No user data in Google Sign-In response');
+    }
+
+    // ✅ CHECK FOR JWT TOKEN
+    if (!response.token) {
+      throw new Error('No JWT token in Google Sign-In response');
+    }
+
+    console.log('[authSaga] Google Sign-In successful. User:', response.user.email);
+    console.log('[authSaga] JWT Token:', response.token.substring(0, 20) + '...');
+
+    yield put({
+      type: GOOGLE_SIGN_IN_SUCCESS,
+      payload: {
+        user: response.user,
+        token: response.token,  // ✅ USE JWT TOKEN
+      },
+    });
+    console.log('[authSaga] googleSignInSaga completed successfully');
+  } catch (error: any) {
+    console.error('[authSaga] googleSignInSaga error:', error.message || error);
+    yield put({
+      type: GOOGLE_SIGN_IN_FAILURE,
+      payload: {
+        error: error.message || 'Google Sign-In failed',
+      },
+    });
+  }
+}
+
 function* logoutSaga() {
   try {
     yield call(logoutApi);
-    
+    // Also sign out from Google if needed
+    try {
+      yield call(signOutFromGoogle);
+    } catch (e) {
+      // Ignore Google sign out errors during logout
+    }
+
     yield put({
       type: LOGOUT_SUCCESS,
     });
@@ -68,5 +120,6 @@ function* logoutSaga() {
 
 export default function* authSaga() {
   yield takeLatest(LOGIN_REQUEST, loginSaga);
+  yield takeLatest(GOOGLE_SIGN_IN_REQUEST, googleSignInSaga);
   yield takeLatest(LOGOUT_REQUEST, logoutSaga);
 }

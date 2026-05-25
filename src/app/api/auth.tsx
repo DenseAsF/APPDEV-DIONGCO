@@ -153,9 +153,16 @@ export async function register(
   }
 }
 
-export async function getAuthToken(): Promise<string | null> {
-  return await safeGetItem('authToken');
-}
+export const getAuthToken = async (): Promise<string | null> => {
+  try {
+    const token = await AsyncStorage.getItem('authToken');
+    console.log('[auth] Retrieved token:', token ? token.substring(0, 20) + '...' : 'null');
+    return token;
+  } catch (error) {
+    console.error('[auth] Error retrieving token:', error);
+    return null;
+  }
+};
 
 export async function logout(): Promise<void> {
   await safeRemoveItem('authToken');

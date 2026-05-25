@@ -1,17 +1,25 @@
 // Shared TypeScript types for the application
 
 export interface User {
+  id?: number;
   username: string;
   email?: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
+  address?: string;
   age?: string;
   accountNumber?: string;
+  roles?: string[];
+  isVerified?: boolean;
 }
 
 export interface AuthResponse {
+  success?: boolean;
   token: string;
   user: User;
+  message?: string;
 }
 
 export interface LoginCredentials {
@@ -90,6 +98,20 @@ export interface LoginFailureAction {
   payload: { error: string };
 }
 
+export interface GoogleSignInRequestAction {
+  type: 'GOOGLE_SIGN_IN_REQUEST';
+}
+
+export interface GoogleSignInSuccessAction {
+  type: 'GOOGLE_SIGN_IN_SUCCESS';
+  payload: AuthResponse;
+}
+
+export interface GoogleSignInFailureAction {
+  type: 'GOOGLE_SIGN_IN_FAILURE';
+  payload: { error: string };
+}
+
 export interface LogoutRequestAction {
   type: 'LOGOUT_REQUEST';
 }
@@ -107,6 +129,9 @@ export type AuthAction =
   | LoginRequestAction
   | LoginSuccessAction
   | LoginFailureAction
+  | GoogleSignInRequestAction
+  | GoogleSignInSuccessAction
+  | GoogleSignInFailureAction
   | LogoutRequestAction
   | LogoutSuccessAction
   | LogoutFailureAction;

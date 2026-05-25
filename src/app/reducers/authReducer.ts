@@ -1,4 +1,8 @@
-import { LOGIN_REQUEST, LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT_REQUEST, LOGOUT_SUCCESS, LOGOUT_FAILURE } from '../actions/authActions';
+import {
+  LOGIN_REQUEST, LOGIN_SUCCESS, LOGIN_FAILURE,
+  GOOGLE_SIGN_IN_REQUEST, GOOGLE_SIGN_IN_SUCCESS, GOOGLE_SIGN_IN_FAILURE,
+  LOGOUT_REQUEST, LOGOUT_SUCCESS, LOGOUT_FAILURE
+} from '../actions/authActions';
 import { AuthState } from '../../types';
 
 const initialState: AuthState = {
@@ -27,6 +31,30 @@ const authReducer = (state: AuthState = initialState, action: any): AuthState =>
         error: null,
       };
     case LOGIN_FAILURE:
+      return {
+        ...state,
+        loading: false,
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        error: action.payload.error,
+      };
+    case GOOGLE_SIGN_IN_REQUEST:
+      return {
+        ...state,
+        loading: true,
+        error: null,
+      };
+    case GOOGLE_SIGN_IN_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        user: action.payload.user,
+        token: action.payload.token,
+        isAuthenticated: true,
+        error: null,
+      };
+    case GOOGLE_SIGN_IN_FAILURE:
       return {
         ...state,
         loading: false,
