@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { customerApi, Room } from '../../services/customerApi';
 import type { RootStackParamList } from '../../types/navigation';
+import { useMercureRooms } from '../../hooks/useMercure';
 
 type RoomsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Rooms'>;
 
@@ -21,6 +22,14 @@ const RoomsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation<RoomsScreenNavigationProp>();
+
+  // Real-time room availability updates via Mercure
+  const handleRoomUpdate = useCallback((data: any) => {
+    console.log('[RoomsScreen] Mercure room update received:', data);
+    loadRoomsRef.current();
+  }, []);
+
+  useMercureRooms(handleRoomUpdate);
 
   const loadRooms = async () => {
     try {
@@ -38,6 +47,9 @@ const RoomsScreen = () => {
       setRefreshing(false);
     }
   };
+
+  const loadRoomsRef = useRef(loadRooms);
+  loadRoomsRef.current = loadRooms;
 
   useEffect(() => {
     loadRooms();

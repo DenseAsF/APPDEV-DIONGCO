@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { customerApi, Booking } from '../../services/customerApi';
 import type { RootStackParamList } from '../../types/navigation';
+import { useMercureBookings } from '../../hooks/useMercure';
 
 type MyBookingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MyBookings'>;
 
@@ -21,6 +22,15 @@ const MyBookingsScreen = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Real-time updates via Mercure
+  const handleBookingUpdate = useCallback((data: any) => {
+    console.log('[MyBookingsScreen] Mercure update received:', data);
+    // Refresh the bookings list when we receive an update
+    loadBookingsRef.current();
+  }, []);
+
+  useMercureBookings(handleBookingUpdate);
 
   const loadBookings = async () => {
     try {
@@ -41,6 +51,9 @@ const MyBookingsScreen = () => {
       setRefreshing(false);
     }
   };
+
+  const loadBookingsRef = useRef(loadBookings);
+  loadBookingsRef.current = loadBookings;
 
   useEffect(() => {
     loadBookings();
