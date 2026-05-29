@@ -1,20 +1,15 @@
-// Centralized configuration for the app
-// Update these values based on your environment
-
 const Config = {
   // Symfony API base URL (no trailing slash)
-  API_BASE_URL: 'http://192.168.142.186:8000/api',
+  API_BASE_URL: 'https://webproject-production-0434.up.railway.app/api',
 
   // Mercure Hub URL - the /.well-known/mercure endpoint
-  // Local development: Mercure runs on Docker at port 9090
   MERCURE_HUB_URL: 'http://192.168.142.186:9090/.well-known/mercure',
 
-  // Production Mercure Hub URL (Render deployment)
-  // Update this once Mercure is deployed on Render
-  MERCURE_HUB_URL_PROD: 'https://your-mercure-hub.onrender.com/.well-known/mercure',
+  // Production Mercure Hub URL (Railway deployment)
+  MERCURE_HUB_URL_PROD: 'https://mercure-production-d499.up.railway.app/.well-known/mercure',
 
   // Set to true to use production URLs
-  USE_PRODUCTION: false,
+  USE_PRODUCTION: true,
 };
 
 export function getApiBaseUrl(): string {
@@ -23,6 +18,10 @@ export function getApiBaseUrl(): string {
 
 export function getMercureHubUrl(): string {
   return Config.USE_PRODUCTION ? Config.MERCURE_HUB_URL_PROD : Config.MERCURE_HUB_URL;
+}
+
+export function getApiHost(): string {
+  return 'https://webproject-production-0434.up.railway.app';
 }
 
 export default Config;

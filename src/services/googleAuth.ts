@@ -1,8 +1,9 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthResponse } from '../types';
+import { getApiBaseUrl } from '../config';
 
-const BASE_URL = 'http://192.168.142.186:8000/api';
+const BASE_URL = getApiBaseUrl();
 
 interface ApiErrorData {
   message?: string;

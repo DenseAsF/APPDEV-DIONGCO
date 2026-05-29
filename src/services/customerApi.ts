@@ -1,6 +1,6 @@
 import { getAuthToken } from '../app/api/auth';
-
-const BASE_URL = 'http://192.168.142.186:8000/api';
+import { getApiBaseUrl } from '../config';
+const BASE_URL = getApiBaseUrl();
 
 // Types
 export interface Room {

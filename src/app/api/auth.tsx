@@ -1,8 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoginCredentials, RegisterData, AuthResponse } from '../../types';
-import { hashPassword } from '../../utils/crypto';
-
-const BASE_URL = 'http://192.168.142.186:8000/api';
+import { getApiBaseUrl } from '../../config';
+const BASE_URL = getApiBaseUrl();
 
 interface ApiErrorData {
   message?: string;

@@ -1,5 +1,7 @@
 import EventSource from 'react-native-sse';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMercureHubUrl } from '../config';
+import { getApiBaseUrl } from '../config';
 
 export type MercureEventCallback = (data: any) => void;
 
@@ -8,23 +10,34 @@ export interface MercureSubscription {
   topics: string[];
 }
 
-/**
- * Subscribe to one or more Mercure topics using Server-Sent Events (SSE).
- * Mercure uses public topics so no auth is needed on the subscriber side.
- *
- * @param topics - Array of topic URIs to subscribe to
- * @param onMessage - Callback fired when a message is received
- * @param onError - Optional error callback
- * @returns MercureSubscription with a close() method to unsubscribe
- */
-export function subscribeToMercure(
+async function getMercureToken(): Promise<string | null> {
+  try {
+    const authToken = await AsyncStorage.getItem('authToken');
+    if (!authToken) return null;
+
+    const response = await fetch(`${getApiBaseUrl()}/mercure-token`, {
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.token;
+  } catch (e) {
+    console.error('[Mercure] Failed to get Mercure token:', e);
+    return null;
+  }
+}
+
+export async function subscribeToMercureAsync(
   topics: string[],
   onMessage: MercureEventCallback,
   onError?: (error: any) => void,
-): MercureSubscription {
+): Promise<MercureSubscription> {
   const hubUrl = getMercureHubUrl();
+  const token = await AsyncStorage.getItem('authToken');
 
-  // Build the subscription URL manually to avoid URL normalization adding a trailing slash
   const queryString = topics
     .map(topic => 'topic=' + encodeURIComponent(topic))
     .join('&');
@@ -32,7 +45,9 @@ export function subscribeToMercure(
 
   console.log('[Mercure] Subscribing to:', subscribeUrl);
 
-  const eventSource = new EventSource(subscribeUrl);
+  const eventSource = new EventSource(subscribeUrl, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
 
   eventSource.addEventListener('message', (event: any) => {
     try {
@@ -47,9 +62,7 @@ export function subscribeToMercure(
 
   eventSource.addEventListener('error', (error: any) => {
     console.warn('[Mercure] EventSource error:', error);
-    if (onError) {
-      onError(error);
-    }
+    if (onError) onError(error);
   });
 
   eventSource.addEventListener('open', () => {
@@ -65,10 +78,54 @@ export function subscribeToMercure(
   };
 }
 
-/**
- * Decode a JWT token to extract the payload (without verification).
- * Used to get user info for topic subscriptions.
- */
+// Keep sync version for backward compat but have it call async internally
+export function subscribeToMercure(
+  topics: string[],
+  onMessage: MercureEventCallback,
+  onError?: (error: any) => void,
+): MercureSubscription {
+  const hubUrl = getMercureHubUrl();
+
+  const queryString = topics
+    .map(topic => 'topic=' + encodeURIComponent(topic))
+    .join('&');
+  const subscribeUrl = hubUrl + '?' + queryString;
+
+  let eventSource: any;
+
+  // Get Mercure-specific token (not the Symfony JWT)
+  getMercureToken().then(mercureToken => {
+    eventSource = new EventSource(subscribeUrl, {
+      headers: mercureToken ? { Authorization: `Bearer ${mercureToken}` } : {},
+    });
+
+    eventSource.addEventListener('message', (event: any) => {
+      try {
+        const data = JSON.parse(event.data);
+        onMessage(data);
+      } catch (e) {
+        onMessage(event.data);
+      }
+    });
+
+    eventSource.addEventListener('error', (error: any) => {
+      console.warn('[Mercure] EventSource error:', error);
+      if (onError) onError(error);
+    });
+
+    eventSource.addEventListener('open', () => {
+      console.log('[Mercure] Connection opened for topics:', topics);
+    });
+  });
+
+  return {
+    close: () => {
+      if (eventSource) eventSource.close();
+    },
+    topics,
+  };
+}
+
 export function decodeJwtPayload(token: string): any {
   try {
     const base64Url = token.split('.')[1];
@@ -86,22 +143,8 @@ export function decodeJwtPayload(token: string): any {
   }
 }
 
-// Topic builders
 export const MercureTopics = {
-  /**
-   * Topic for a specific user's booking updates
-   * The backend publishes to this topic when a booking status changes
-   */
   userBookings: (username: string) => `/bookings/${username}`,
-
-  /**
-   * Topic for room availability updates (global)
-   * The backend publishes to this topic when room status changes
-   */
   rooms: () => '/rooms',
-
-  /**
-   * Topic for a specific room update
-   */
   room: (roomId: number) => `/rooms/${roomId}`,
 };
