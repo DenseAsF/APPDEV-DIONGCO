@@ -8,15 +8,13 @@ import {
   MercureTopics,
   decodeJwtPayload,
 } from '../services/mercure';
+import { useNotifications } from '../context/NotificationContext';
+import { AppNotification, NotificationStatus } from '../context/NotificationContext';
 
 /**
  * Hook to subscribe to Mercure topics.
  * Automatically manages the EventSource connection lifecycle.
  * Reconnects when the app comes back to foreground.
- *
- * @param topics - Array of topic URIs to subscribe to
- * @param onMessage - Callback when a message is received
- * @param enabled - Whether the subscription should be active (default: true)
  */
 export function useMercure(
   topics: string[],
@@ -26,13 +24,11 @@ export function useMercure(
   const subscriptionRef = useRef<MercureSubscription | null>(null);
   const onMessageRef = useRef<MercureEventCallback>(onMessage);
 
-  // Keep callback ref up to date without re-subscribing
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
 
   const connect = useCallback(() => {
-    // Close existing subscription
     if (subscriptionRef.current) {
       subscriptionRef.current.close();
       subscriptionRef.current = null;
@@ -51,10 +47,8 @@ export function useMercure(
     );
   }, [topics.join(','), enabled]);
 
-  // Subscribe/unsubscribe on mount/unmount or when topics change
   useEffect(() => {
     connect();
-
     return () => {
       if (subscriptionRef.current) {
         subscriptionRef.current.close();
@@ -63,7 +57,6 @@ export function useMercure(
     };
   }, [connect]);
 
-  // Reconnect when app comes back to foreground
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active' && enabled) {
@@ -84,20 +77,72 @@ export function useMercure(
   }, [connect, enabled]);
 }
 
+// ---------------------------------------------------------------------------
+// Notification helper — maps a booking status to a title + message
+// ---------------------------------------------------------------------------
+const buildNotification = (
+  status: string,
+  bookingId: string | number,
+): { title: string; message: string; status: NotificationStatus } | null => {
+  switch (status) {
+    case 'Booked':
+      return {
+        title: 'Booking Confirmed ✓',
+        message: `Your booking #${bookingId} has been confirmed.`,
+        status: 'booked',
+      };
+    case 'Checked In':
+      return {
+        title: 'Checked In 🏨',
+        message: `Welcome! You have checked in for booking #${bookingId}.`,
+        status: 'checked_in',
+      };
+    case 'Checked Out':
+      return {
+        title: 'Checked Out',
+        message: `Thanks for your stay! Booking #${bookingId} is complete.`,
+        status: 'checked_out',
+      };
+    case 'Cancelled':
+      return {
+        title: 'Booking Cancelled',
+        message: `Your booking #${bookingId} has been cancelled.`,
+        status: 'cancelled',
+      };
+    default:
+      return null;
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Helper: fires the in-app notification if the Mercure payload has a status
+// ---------------------------------------------------------------------------
+const handleNotification = (
+  _data: any,
+  _addNotification: (n: any) => void,
+) => {
+  // Notifications are handled globally by GlobalMercureListener in index.tsx
+  // to avoid duplicates. Do not fire notifications here.
+};
+
 /**
  * Hook to subscribe to the current user's booking updates via Mercure.
  * Automatically resolves the user's username from the stored JWT.
- *
- * @param onBookingUpdate - Callback when a booking update is received
  */
 export function useMercureBookings(onBookingUpdate: MercureEventCallback) {
+  const { addNotification } = useNotifications();
   const topicsRef = useRef<string[]>([]);
   const subscriptionRef = useRef<MercureSubscription | null>(null);
   const onUpdateRef = useRef<MercureEventCallback>(onBookingUpdate);
+  const addNotificationRef = useRef(addNotification);
 
   useEffect(() => {
     onUpdateRef.current = onBookingUpdate;
   }, [onBookingUpdate]);
+
+  useEffect(() => {
+    addNotificationRef.current = addNotification;
+  }, [addNotification]);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,12 +165,16 @@ export function useMercureBookings(onBookingUpdate: MercureEventCallback) {
 
         const topic = MercureTopics.userBookings(username);
         topicsRef.current = [topic];
-
         console.log('[useMercureBookings] Subscribing to:', topic);
 
         subscriptionRef.current = subscribeToMercure(
           [topic],
-          (data) => onUpdateRef.current(data),
+          // onMessage — forward to caller AND fire in-app notification
+          (data) => {
+            onUpdateRef.current(data);
+            handleNotification(data, addNotificationRef.current);
+          },
+          // onError — 3rd and final argument
           (error) => {
             console.warn('[useMercureBookings] Error:', error);
           },
@@ -146,17 +195,24 @@ export function useMercureBookings(onBookingUpdate: MercureEventCallback) {
     };
   }, []);
 
-  // Reconnect on app foreground
+  // Reconnect when app comes back to foreground
   useEffect(() => {
     const handleAppState = (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active' && topicsRef.current.length > 0) {
-        // Reconnect
         if (subscriptionRef.current) {
           subscriptionRef.current.close();
         }
         subscriptionRef.current = subscribeToMercure(
           topicsRef.current,
-          (data) => onUpdateRef.current(data),
+          // onMessage
+          (data) => {
+            onUpdateRef.current(data);
+            handleNotification(data, addNotificationRef.current);
+          },
+          // onError
+          (error) => {
+            console.warn('[useMercureBookings] Reconnect error:', error);
+          },
         );
       } else if (nextAppState !== 'active') {
         if (subscriptionRef.current) {
@@ -173,8 +229,6 @@ export function useMercureBookings(onBookingUpdate: MercureEventCallback) {
 
 /**
  * Hook to subscribe to room availability updates via Mercure.
- *
- * @param onRoomUpdate - Callback when a room update is received
  */
 export function useMercureRooms(onRoomUpdate: MercureEventCallback) {
   useMercure([MercureTopics.rooms()], onRoomUpdate);

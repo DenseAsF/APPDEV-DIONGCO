@@ -8,4 +8,5 @@ export default {
     CREATE_BOOKING: 'CreateBooking',
     MY_BOOKINGS: 'MyBookings',
     EDIT_PROFILE: 'EditProfile',
+    NOTIFICATIONS: 'Notifications',
 }

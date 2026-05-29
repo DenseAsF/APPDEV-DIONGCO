@@ -3,17 +3,19 @@ import { Provider } from 'react-redux';
 import store from './src/app/store';
 import Nav from './src/navigations';
 import { configureGoogleSignIn } from './src/config/googleSignIn';
+import { NotificationProvider } from './src/context/NotificationContext';
 
 const App = () => {
   useEffect(() => {
-    // Initialize Google Sign-In configuration
     configureGoogleSignIn();
     console.log('[App] Google Sign-In configured');
   }, []);
 
   return (
     <Provider store={store}>
-      <Nav />
+      <NotificationProvider>
+        <Nav />
+      </NotificationProvider>
     </Provider>
   );
 };

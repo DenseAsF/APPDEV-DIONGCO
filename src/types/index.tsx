@@ -135,3 +135,15 @@ export type AuthAction =
   | LogoutRequestAction
   | LogoutSuccessAction
   | LogoutFailureAction;
+
+export type NotificationStatus = 'booked' | 'pending' | 'cancelled' | 'checked_in' | 'checked_out';
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  bookingId: string | number;
+  status: NotificationStatus;
+  read: boolean;
+  createdAt: string;
+}

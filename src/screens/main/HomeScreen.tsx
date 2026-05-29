@@ -20,6 +20,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../types/navigation';
+import { useNotifications } from '../../context/NotificationContext';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 import {
@@ -73,6 +74,24 @@ const renderSectionHeader = (title: string) => (
   <Text style={styles.sectionTitle}>{title}</Text>
 );
 
+const BellIcon = ({ unreadCount }: { unreadCount: number }) => (
+  <View style={styles.bellContainer}>
+    <View style={styles.bellIconWrapper}>
+      {/* Simple bell shape using Views — no external icon library needed */}
+      <View style={styles.bellTop} />
+      <View style={styles.bellBody} />
+      <View style={styles.bellBottom} />
+    </View>
+    {unreadCount > 0 && (
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>
+          {unreadCount > 9 ? '9+' : unreadCount}
+        </Text>
+      </View>
+    )}
+  </View>
+);
+
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const scrollViewRef = useRef<ScrollView>(null);
@@ -85,6 +104,7 @@ const HomeScreen = () => {
   const sectionLayouts = useSelector(selectSectionLayouts);
   const homeLoading = useSelector(selectHomeLoading);
   const homeError = useSelector(selectHomeError);
+  const { unreadCount } = useNotifications();
 
   const onSectionLayout = (name: string) => (event: any) => {
     const { y } = event.nativeEvent.layout;
@@ -163,7 +183,12 @@ const HomeScreen = () => {
           <HamburgerIcon />
         </TouchableOpacity>
         <Image source={getImageSource('logo')} style={styles.headerLogoImage} resizeMode="contain" />
-        <View style={{ width: 40 }} />
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Notifications')}
+          style={styles.bellButton}
+          activeOpacity={0.7}>
+          <BellIcon unreadCount={unreadCount} />
+        </TouchableOpacity>
       </View>
 
       <Modal animationType="fade" transparent={true} visible={menuVisible} onRequestClose={() => (dispatch as any)(toggleMenu())}>
@@ -740,6 +765,59 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontFamily: 'Helvetica Neue LT Std',
+  },
+    bellButton: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bellContainer: {
+    position: 'relative',
+    width: 26,
+    height: 28,
+    alignItems: 'center',
+  },
+  bellIconWrapper: {
+    alignItems: 'center',
+  },
+  bellTop: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#1A1A1A',
+    marginBottom: 1,
+  },
+  bellBody: {
+    width: 18,
+    height: 14,
+    borderRadius: 9,
+    borderWidth: 2.5,
+    borderColor: '#1A1A1A',
+    borderBottomWidth: 0,
+  },
+  bellBottom: {
+    width: 22,
+    height: 3,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 2,
+    marginTop: 1,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    backgroundColor: '#c62828',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });
 
